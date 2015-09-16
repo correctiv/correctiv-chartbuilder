@@ -1,0 +1,111 @@
+{% load static i18n %}
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width" />
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+  <title>Chartbuilder 2.0</title>
+  <link rel="stylesheet" href="{% static "chartbuilder/css/main.css" %}">
+  <style>
+    .correctiv-admin {
+      background-color: #1e866c;
+      padding: 10px;
+      width: 40%;
+      margin-left: 680px;
+    }
+    #correctiv-save-button {
+      font-size: 16px;
+      padding: 15px 25px;
+    }
+    .export-button-wrapper {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+  <div class="chartbuilder-container">
+  </div>
+  <div class="correctiv-admin" style="display:none">
+    <button id="correctiv-save-button">{% trans "Save and close" %}</button>
+  </div>
+  <script src="{% static "chartbuilder/js/main.js" %}"></script>
+  <script>
+  (function(){
+    var csrftoken = '{{ csrf_token }}';
+    var getJSON = function(url, cb) {
+      var request = new XMLHttpRequest();
+      request.open('GET', url, true);
+      request.onload = function() {
+        if (request.status >= 200 && request.status < 400) {
+          // Success!
+          var data = JSON.parse(request.responseText);
+          cb(null, data);
+        } else {
+          cb(request.status);
+        }
+      };
+      request.onerror = function() {
+        cb(arguments);
+      };
+      request.send();
+    };
+    var postJSON = function(url, data, cb) {
+      if (url[0] !== '/' || url[1] === '/') {
+        console.error('Suspected cross domain!');
+        return;
+      }
+      var request = new XMLHttpRequest();
+      request.open('PUT', url, true);
+      request.setRequestHeader('Content-Type', 'application/json;');
+      request.setRequestHeader("X-CSRFToken", csrftoken);
+      request.send(JSON.stringify(data));
+      request.onload = function(){
+        cb();
+      };
+    };
+
+    var saveButton = document.getElementById('correctiv-save-button');
+
+    var url = document.location.search.split('url=')[1];
+    getJSON(url, function(err, chart){
+
+      d3.select('.correctiv-admin').style('display', 'block');
+
+      saveButton.addEventListener('click', function(){
+        var model = JSON.parse(localStorage.getItem("model"));
+        if (model === null) {
+          alert('No changes have been made!');
+          return;
+        }
+        var svgNode = document.getElementsByClassName('renderer-svg-desktop')[0].getElementsByClassName('renderer-svg')[0];
+
+        var svg = chartBuilder.SVGExporter.createSVGFile(svgNode);
+        // cut off data uri part "data:text/svg,"
+        svg = svg.substr(14);
+        var data = {
+          chart_settings: model,
+          svg: svg,
+          csv_data: model.chartProps.input.raw,
+          title: chart.title,
+          width: Math.round(svgNode.attributes.width.nodeValue),
+          height: Math.round(svgNode.attributes.height.nodeValue)
+        };
+        postJSON(url, data, function(){
+          if (window.opener && window.opener.chartbuilderPopupClosed) {
+            window.opener.chartbuilderPopupClosed();
+          }
+          window.close();
+        });
+      });
+
+      var container = document.querySelector(".chartbuilder-container");
+      var chartBuilder = createChartBuilder(container, {
+        data: chart.csv_data || '',
+        model: chart.chart_settings
+      });
+    });
+  }());
+  </script>
+</body>
+</html>

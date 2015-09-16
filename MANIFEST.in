@@ -1,0 +1,6 @@
+include LICENSE
+include README.md
+recursive-include chartbuilder/locale *
+recursive-include chartbuilder/templates *
+recursive-include chartbuilder/static *
+recursive-exclude * *.pyc

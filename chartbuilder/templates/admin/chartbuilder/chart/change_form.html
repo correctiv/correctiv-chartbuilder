@@ -1,0 +1,35 @@
+{% extends "admin/change_form.html" %}
+{% load i18n %}
+{% block object-tools-items %}
+{% if original %}
+<li>
+  <a href="#" class="chartbuilder-editchart">
+    {% trans "Edit Chart" %}
+    {% if original.customised %}
+      {% trans "Warning: chart has been customised!" %}
+    {% endif %}
+  </a>
+</li>
+{% endif %}
+{{ block.super }}
+{% endblock %}
+
+{% block after_related_objects %}
+{{ block.super }}
+
+{% if original %}
+<script type="text/javascript">
+  (function($){
+    var editWindow;
+    var editUrl = "{% url 'admin:chartbuilder-admin-get_chart_form' %}?url={% url 'chartbuilder:chartbuilder-api-detailview' pk=original.pk %}";
+    $('.chartbuilder-editchart').click(function(e){
+      e.preventDefault();
+      editWindow = window.open(editUrl, 'chartbuilder', 'resizable=yes,scrollbars=yes,status=no,location=no');
+      window.chartbuilderPopupClosed = function(){
+        document.location.reload();
+      };
+    });
+  }(django.jQuery));
+</script>
+{% endif %}
+{% endblock %}
