@@ -1,0 +1,4 @@
+Customized build of Chartbuilder by Quartz https://github.com/Quartz/Chartbuilder
+
+Source of customization:
+https://github.com/correctiv/Chartbuilder/tree/cms-integration
