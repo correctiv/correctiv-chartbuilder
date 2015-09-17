@@ -43536,7 +43536,6 @@ module.exports = cb_charts;
 
 },{"./cb-chart-grid/draw-bar-grid":271,"./cb-xy/draw-xy":275}],274:[function(require,module,exports){
 var SessionStore = require("../stores/SessionStore");
-var separators = SessionStore.get("separators");
 
 /**
  * @name cb_d4_mixins
@@ -45654,8 +45653,8 @@ var map = require("lodash/collection/map");
 var reduce = require("lodash/collection/reduce");
 
 var SessionStore = require("../../stores/SessionStore");
-var separators = SessionStore.get("separators");
-var formatThousands = require("d3").format(separators.thousands);
+var separators; // Initialize late to be able to reconfigure
+var formatThousands;
 
 /* Helper functions */
 var cb_bar_grid = require("../../charts/cb-charts").cb_bar_grid;
@@ -46017,13 +46016,18 @@ function bar_tick_size(state) {
 }
 
 function format_bar_labels(label) {
+	// Late binding of value
+	if (formatThousands === undefined) {
+		separators = SessionStore.get("separators");
+		formatThousands = require("d3").format('a');
+	}
 	if (label === null) {
 		return "no data";
 	} else {
+		console.log(separators, label, formatThousands(label));
 		return formatThousands(label);
 	}
 }
-
 
 },{"../../charts/cb-charts":273,"../../stores/SessionStore":318,"../../util/helper.js":320,"../mixins/ChartRendererMixin.js":300,"../svg/HiddenSvg.jsx":307,"./GridChart.jsx":295,"d3":14,"d4":15,"lodash/collection/map":23,"lodash/collection/reduce":24,"lodash/lang/clone":84,"react":263}],290:[function(require,module,exports){
 /*
@@ -46627,6 +46631,7 @@ var filter = require("lodash/collection/filter");
 /* Helper functions */
 var cb_xy = require("../../charts/cb-charts").cb_xy;
 var help = require("../../util/helper.js");
+var SessionStore = require("../../stores/SessionStore");
 
 /* Renderer mixins */
 var ChartRendererMixin = require("../mixins/ChartRendererMixin.js");
@@ -46682,6 +46687,8 @@ var ChartGridXY = React.createClass({displayName: "ChartGridXY",
 	},
 
 	render: function() {
+		var separators = SessionStore.get("separators");
+
 		var chartProps = update(this.props.chartProps, { $merge: {
 			data: this._applySettingsToData(this.props.chartProps, { altAxis: false }),
 			scale: this.props.scale
@@ -46735,7 +46742,7 @@ var ChartGridXY = React.createClass({displayName: "ChartGridXY",
 		});
 
 		var formattedTicks = map(skipFirstValue, function(tick) {
-			return help.roundToPrecision(tick, currScale.precision);
+			return help.roundToPrecision(tick, currScale.precision, separators.decimal, separators.thousands);
 		});
 
 		var axisTicks = {
@@ -46950,6 +46957,8 @@ function yAxisUsing(location, axis, state) {
 	var isPrimary = (location === "primary");
 	var scale = chartProps.scale;
 
+	var separators = SessionStore.get("separators");
+
 	axis.tickValues(help.exactTicks(scale.primaryScale.domain, scale.primaryScale.ticks));
 	axis.innerTickSize(state.dimensions.width);
 
@@ -46958,11 +46967,11 @@ function yAxisUsing(location, axis, state) {
 		if (d == maxTickVal) {
 			return [
 				scale.primaryScale.prefix,
-				help.roundToPrecision(d, scale.primaryScale.precision),
+				help.roundToPrecision(d, scale.primaryScale.precision, separators.decimal, separators.thousands),
 				scale.primaryScale.suffix
 			].join("");
 		} else {
-			return help.roundToPrecision(d, scale.primaryScale.precision);
+			return help.roundToPrecision(d, scale.primaryScale.precision, separators.decimal, separators.thousands);
 		}
 	});
 }
@@ -46970,7 +46979,7 @@ function yAxisUsing(location, axis, state) {
 
 module.exports = ChartGridXY;
 
-},{"../../charts/cb-charts":273,"../../util/helper.js":320,"../mixins/ChartRendererMixin.js":300,"../svg/HiddenSvg.jsx":307,"./GridChart.jsx":295,"d4":15,"lodash/collection/filter":21,"lodash/collection/map":23,"lodash/lang/clone":84,"react":263}],294:[function(require,module,exports){
+},{"../../charts/cb-charts":273,"../../stores/SessionStore":318,"../../util/helper.js":320,"../mixins/ChartRendererMixin.js":300,"../svg/HiddenSvg.jsx":307,"./GridChart.jsx":295,"d4":15,"lodash/collection/filter":21,"lodash/collection/map":23,"lodash/lang/clone":84,"react":263}],294:[function(require,module,exports){
 var React = require("react");
 var PropTypes = React.PropTypes;
 var update = React.addons.update;
@@ -47737,6 +47746,7 @@ var HiddenSvg = require("../svg/HiddenSvg.jsx");
 // Helpers
 var cb_xy = require("../../charts/cb-charts").cb_xy;
 var help = require("../../util/helper.js");
+var SessionStore = require("../../stores/SessionStore");
 
 var scaleNames = ["primaryScale", "secondaryScale"];
 
@@ -47810,6 +47820,8 @@ var XYRenderer = React.createClass({displayName: "XYRenderer",
 		var labelComponents;
 		var dimensions = this.props.dimensions;
 
+		var separators = SessionStore.get("separators");
+
 		// Dimensions of the chart area
 		var chartAreaDimensions = {
 			width: (dimensions.width -
@@ -47852,7 +47864,7 @@ var XYRenderer = React.createClass({displayName: "XYRenderer",
 				});
 
 				var formattedTicks = map(skipFirstNode, function(tick) {
-					return help.roundToPrecision(tick, currScale.precision);
+					return help.roundToPrecision(tick, currScale.precision, separators.decimal, separators.thousands);
 				});
 
 				axisTicks.push({
@@ -48482,6 +48494,8 @@ function yAxisUsing(location, axis, el, state) {
 	var hasOtherAxis = chartProps._numSecondaryAxis > 0;
 	var scaleId = isPrimary ? "left" : "right";
 
+	var separators = SessionStore.get("separators");
+
 	if(!hasOtherAxis && !isPrimary) {
 		axis.render = function() {
 			this.container.selectAll(".right.axis").remove();
@@ -48500,11 +48514,11 @@ function yAxisUsing(location, axis, el, state) {
 		if (d == axisTicks.max) {
 			return [
 				scale.prefix,
-				help.roundToPrecision(d, scale.precision),
+				help.roundToPrecision(d, scale.precision, separators.decimal, separators.thousands),
 				scale.suffix
 			].join("");
 		} else {
-			return help.roundToPrecision(d, scale.precision);
+			return help.roundToPrecision(d, scale.precision, separators.decimal, separators.thousands);
 		}
 	});
 
@@ -48559,7 +48573,7 @@ function computePadding(props, chartHeight) {
 
 module.exports = XYRenderer;
 
-},{"../../actions/ChartViewActions":267,"../../charts/cb-charts":273,"../../util/helper.js":320,"../mixins/ChartRendererMixin.js":300,"../mixins/DateScaleMixin.js":301,"../svg/HiddenSvg.jsx":307,"../svg/SvgRectLabel.jsx":308,"d3":14,"d4":15,"lodash/collection/each":20,"lodash/collection/filter":21,"lodash/collection/map":23,"lodash/collection/reduce":24,"lodash/collection/some":25,"lodash/lang/clone":84,"lodash/object/assign":94,"react":263,"react/addons":102}],299:[function(require,module,exports){
+},{"../../actions/ChartViewActions":267,"../../charts/cb-charts":273,"../../stores/SessionStore":318,"../../util/helper.js":320,"../mixins/ChartRendererMixin.js":300,"../mixins/DateScaleMixin.js":301,"../svg/HiddenSvg.jsx":307,"../svg/SvgRectLabel.jsx":308,"d3":14,"d4":15,"lodash/collection/each":20,"lodash/collection/filter":21,"lodash/collection/map":23,"lodash/collection/reduce":24,"lodash/collection/some":25,"lodash/lang/clone":84,"lodash/object/assign":94,"react":263,"react/addons":102}],299:[function(require,module,exports){
 var React = require("react");
 var update = React.addons.update;
 
@@ -50639,6 +50653,15 @@ global.createChartBuilder = function(container, options) {
 	} else {
 		model = chartConfig.xy.defaultProps;
 		model.metadata.credit = "";
+		model.session = model.session || {
+			emSize: 10,
+			width: 640,
+			timerOn: true
+		};
+		model.session.separators = {
+      "decimal": ".",
+      "thousands": ","
+    };
 	}
 	if (options.data) {
 		var res = dataBySeries(options.data);
@@ -50962,6 +50985,10 @@ ChartPropertiesStore.dispatchToken = Dispatcher.register(registeredCallback);
 module.exports = ChartPropertiesStore;
 
 },{"../charts/chart-config":279,"../dispatcher/dispatcher":314,"events":1,"lodash/object/assign":94}],318:[function(require,module,exports){
+var React = require("react");
+var PureRenderMixin = require('react/addons').addons.PureRenderMixin;
+var PropTypes = React.PropTypes;
+var update = React.addons.update;
 
 var assign = require("lodash/object/assign");
 var EventEmitter = require("events").EventEmitter;
@@ -51039,6 +51066,11 @@ Dispatcher.register(function(payload) {
 			SessionStore.emitChange();
 			break;
 
+		case "receive-model":
+			_session = update(_session, { $merge: action.model.session})
+			SessionStore.emitChange();
+			break;
+
 		default:
 			// do nothing
 	}
@@ -51068,7 +51100,7 @@ function detectNumberSeparators() {
 
 module.exports = SessionStore;
 
-},{"../dispatcher/dispatcher":314,"events":1,"lodash/object/assign":94}],319:[function(require,module,exports){
+},{"../dispatcher/dispatcher":314,"events":1,"lodash/object/assign":94,"react":263,"react/addons":102}],319:[function(require,module,exports){
 // Get data from and save to local storage
 
 var ChartServerActions = require("../actions/ChartServerActions");
@@ -51197,6 +51229,11 @@ function compute_scale_domain(scaleObj, data, opts) {
 	};
 }
 
+
+function formatNumber(num, sep) {
+    return num.toString().replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1" + sep)
+}
+
 /**
  * round_to_precision
  * Round a number to N decimal places
@@ -51208,7 +51245,7 @@ function compute_scale_domain(scaleObj, data, opts) {
  * @memberof helper
  * @return {number} Rounded number
  */
-function round_to_precision(num, precision, supress_thou_sep) {
+function round_to_precision(num, precision, decimalSep, thousandSep, supress_thou_sep) {
 	if (num === 0) {
 		//zero should always be "0"
 		return "0";
@@ -51228,14 +51265,14 @@ function round_to_precision(num, precision, supress_thou_sep) {
 	}
 
 	if (!supress_thou_sep) {
-		s[0] = d3.format(",")(parseInt(s[0]));
+		s[0] = formatNumber(parseInt(s[0]), thousandSep);
 	}
 
 	if (precision === 0) {
 		return s[0];
 	}
 
-	return s.join(".");
+	return s.join(decimalSep);
 }
 
 /**
@@ -51449,11 +51486,14 @@ var stripChars = [
 
 var newLineRegex = /\r\n|\r|\n/;
 
-var separators = SessionStore.get("separators");
-
 function parseDelimInput(input, opts) {
 	opts = opts || {};
 	delimiter = opts.delimiter || parseUtils.detectDelimiter(input);
+
+	var separators = {
+		thousands: ",",
+		decimal: ".",
+	};
 
 	// create regex of special characters we want to strip out as well as our
 	// computed locale-specific thousands separator.
@@ -51509,7 +51549,6 @@ function parseKeyColumn(entry, hasDate) {
 }
 
 module.exports = parseDelimInput;
-
 
 },{"../stores/SessionStore":318,"./parse-utils":324,"d3":14,"lodash/collection/each":20,"sugar-date":265}],324:[function(require,module,exports){
 var tabRegex = /[^\t]/gi;
