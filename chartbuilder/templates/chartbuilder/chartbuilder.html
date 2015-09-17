@@ -36,6 +36,7 @@
     var getJSON = function(url, cb) {
       var request = new XMLHttpRequest();
       request.open('GET', url, true);
+      request.setRequestHeader('Accept', 'application/json');
       request.onload = function() {
         if (request.status >= 200 && request.status < 400) {
           // Success!
@@ -57,7 +58,7 @@
       }
       var request = new XMLHttpRequest();
       request.open('PUT', url, true);
-      request.setRequestHeader('Content-Type', 'application/json;');
+      request.setRequestHeader('Content-Type', 'application/json');
       request.setRequestHeader("X-CSRFToken", csrftoken);
       request.send(JSON.stringify(data));
       request.onload = function(){
