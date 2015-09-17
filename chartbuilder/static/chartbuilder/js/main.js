@@ -50627,6 +50627,10 @@ var Chartbuilder = require("./components/Chartbuilder.jsx");
 var dataBySeries = require("./util/parse-data-by-series");
 var SVGExporter = require('./util/svg-exporter');
 
+var ChartPropertiesStore = require("./stores/ChartPropertiesStore");
+var ChartMetadataStore = require("./stores/ChartMetadataStore");
+var SessionStore = require("./stores/SessionStore");
+
 global.createChartBuilder = function(container, options) {
 
 	var model;
@@ -50655,12 +50659,19 @@ global.createChartBuilder = function(container, options) {
 	React.render(chartbuilder, container);
 	return {
 		chartbuilder: chartbuilder,
-		SVGExporter: SVGExporter
+		SVGExporter: SVGExporter,
+		getState: function() {
+			return {
+				chartProps: ChartPropertiesStore.getAll(),
+				metadata: ChartMetadataStore.getAll(),
+				session: SessionStore.getAll()
+			};
+		}
 	};
 };
 
 }).call(this,typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./actions/ChartServerActions":266,"./charts/chart-config":279,"./components/Chartbuilder.jsx":286,"./config/default-input":313,"./util/parse-data-by-series":322,"./util/svg-exporter":326,"react":263}],316:[function(require,module,exports){
+},{"./actions/ChartServerActions":266,"./charts/chart-config":279,"./components/Chartbuilder.jsx":286,"./config/default-input":313,"./stores/ChartMetadataStore":316,"./stores/ChartPropertiesStore":317,"./stores/SessionStore":318,"./util/parse-data-by-series":322,"./util/svg-exporter":326,"react":263}],316:[function(require,module,exports){
 /*
  * Store the Chart's metadata. These are properties used to describe the chart
  * and are unrelated to the actual rendering of the chart.

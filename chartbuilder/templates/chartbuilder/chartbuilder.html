@@ -73,11 +73,7 @@
       d3.select('.correctiv-admin').style('display', 'block');
 
       saveButton.addEventListener('click', function(){
-        var model = JSON.parse(localStorage.getItem("model"));
-        if (model === null) {
-          alert('No changes have been made!');
-          return;
-        }
+        var model = chartBuilder.getState();
         var svgNode = document.getElementsByClassName('renderer-svg-desktop')[0].getElementsByClassName('renderer-svg')[0];
 
         var svg = chartBuilder.SVGExporter.createSVGFile(svgNode);
