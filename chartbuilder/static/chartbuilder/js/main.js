@@ -43536,6 +43536,7 @@ module.exports = cb_charts;
 
 },{"./cb-chart-grid/draw-bar-grid":271,"./cb-xy/draw-xy":275}],274:[function(require,module,exports){
 var SessionStore = require("../stores/SessionStore");
+var separators = SessionStore.get("separators");
 
 /**
  * @name cb_d4_mixins
@@ -51067,7 +51068,7 @@ Dispatcher.register(function(payload) {
 			break;
 
 		case "receive-model":
-			_session = update(_session, { $merge: action.model.session})
+			_session = update(_session, { $merge: action.model.session || {}})
 			SessionStore.emitChange();
 			break;
 
